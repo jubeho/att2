@@ -1,13 +1,44 @@
-import std/[logging,tables,os,strformat,strutils]
-import ./[id3tag,flactag]
-
+import std/[logging,tables,os,strformat,strutils,streams]
+import config
 
 type
+  Enc* = enum
+    encIso = 0x00
+    encUtf16 = 0x01
+    encUtf8 = 0x03
+    
+  TagType* = enum
+    ttUndef, ttID3v22, ttID3v23, ttID3v24, ttVorbisComment
 
+  AudioType* = enum
+    atMP3,atFLAC
+
+  Pic* = ref object
+    enc*: Enc
+    description*: string
+    mimeType*: string
+    `type`*: uint8
+    data*: seq[byte]
+
+  Header* = ref object
+    flags*: byte
+    size*: uint32
+
+  Tag* = ref object
+    name*: string
+    value*: string
+    enc*: Enc
+  
   AudioMetadata* = ref object
-    tags*: OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]] # key: tagname
-    pics*: seq[tuple[textEncoding: uint8, description: string, mimeType: string, picType: uint8, data: seq[byte]]]
+    audiotype*: AudioType
+    tagtype*: TagType
+    header*: Header
+    tags*: OrderedTable[string, Tag] # key: ataglib-tagname from 
+    pics*: seq[Pic]
 
+include id3tag
+include flactag
+   
 proc readAudiometadata*(fp: string): AudioMetadata
 proc writeAudiomedata*(am: AudioMetadata, fp: string)
 
@@ -29,17 +60,15 @@ proc readAudiometadata*(fp: string): AudioMetadata =
     return
 
   if metadataKind == ['I','D','3']:
-    result = readId3v23(strm)
+    result = readId3Metadata(strm)
     if result != nil:
-      result.filepath = fp
       result.audioType = atMP3
   elif metadataKind == ['f','L','a']:
     if strm.readChar() != 'C':
       echo fmt("ERROR: found fLa as prefix - expecting 'C' but got not 'C'")
       return nil
-    result = parseFlacStream(strm)
+    result = readFlacMetadata(strm)
     if result != nil:
-      result.filepath = fp
       result.audioType = atFLAC
   else:
     echo fmt("unsupported or no metadata kind (tag-typ3) {metadataKind}")
@@ -53,10 +82,10 @@ proc writeAudiomedata*(am: AudioMetadata, fp: string) =
   case ext
   of ".mp3":
     debug "found mp3 file"
-    writeId3Metadata(am.tags, am.pics, fp)
+    writeId3Metadata(am, fp)
   of ".flac":
     debug "found flac file"
-    writeFlacMetadata(am.tags, am.pics, fp)
+    writeFlacMetadata(am, fp)
   else:
     warn(fmt("unsupport file-type: {ext}"))
 

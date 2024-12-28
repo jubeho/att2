@@ -1,14 +1,10 @@
-import std/[tables]
+import std/[streams]
 
-proc readFlacMetadata*(fp: string): (OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                  seq[tuple[data: seq[uint8]]])
-proc writeFlacMetadata*(tags: OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                        pics: seq[tuple[data: seq[uint8]]], fp: string)
+proc readFlacMetadata*(strm: FileStream): AudioMetadata
+proc writeFlacMetadata*(am: AudioMetadata, fp: string)
 
-proc readFlacMetadata*(fp: string): (OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                  seq[tuple[data: seq[uint8]]]) =
+proc readFlacMetadata*(strm: FileStream):AudioMetadata =
   discard
 
-proc writeFlacMetadata*(tags: OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                        pics: seq[tuple[data: seq[uint8]]], fp: string) =
+proc writeFlacMetadata*(am: AudioMetadata, fp: string) =
   discard

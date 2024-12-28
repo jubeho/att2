@@ -1,16 +1,13 @@
-import std/[tables,logging]
+import std/[streams]
+import config
 
-proc readId3Metadata*(fp: string): (OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                  seq[tuple[data: seq[uint8]]])
-proc writeId3Metadata*(tags: OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                       pics: seq[tuple[data: seq[uint8]]], fp: string)
+proc readId3Metadata*(strm: FileStream):AudioMetadata
+proc writeId3Metadata*(amd: AudioMetadata, fp: string)
 
-proc readId3Metadata*(fp: string): (OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                  seq[tuple[data: seq[uint8]]]) =
+proc readId3Metadata*(strm: FileStream):AudioMetadata =
 
   discard
   
-proc writeId3Metadata*(tags: OrderedTable[string, tuple[tagname, tagvalue: string, enc: uint8]],
-                       pics: seq[tuple[data: seq[uint8]]], fp: string) =
+proc writeId3Metadata*(amd: AudioMetadata, fp: string) =
   discard
 
