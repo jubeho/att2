@@ -39,10 +39,10 @@ type
 include id3tag
 include flactag
    
-proc readAudiometadata*(fp: string): AudioMetadata
+proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata
 proc writeAudiomedata*(am: AudioMetadata, fp: string)
 
-proc readAudiometadata*(fp: string): AudioMetadata =
+proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata =
 
   let strm = newFileStream(fp, fmRead)
   if strm == nil:
@@ -60,14 +60,14 @@ proc readAudiometadata*(fp: string): AudioMetadata =
     return
 
   if metadataKind == ['I','D','3']:
-    result = readId3Metadata(strm)
+    result = readId3Metadata(strm, cfg.id3v23ToAtt)
     if result != nil:
       result.audioType = atMP3
   elif metadataKind == ['f','L','a']:
     if strm.readChar() != 'C':
       echo fmt("ERROR: found fLa as prefix - expecting 'C' but got not 'C'")
       return nil
-    result = readFlacMetadata(strm)
+    result = readFlacMetadata(strm, cfg.vorbisToAtt)
     if result != nil:
       result.audioType = atFLAC
   else:
@@ -90,7 +90,8 @@ proc writeAudiomedata*(am: AudioMetadata, fp: string) =
     warn(fmt("unsupport file-type: {ext}"))
 
 when isMainModule:
-  let am = readAudiometadata("sepp.mP3")
-  let am2 = readAudiometadata("sepp.Flac")
-  let am3 = readAudiometadata("sepp.mPd3")
+  let cfg = loadTagmap("tagmap.toml")
+  let am = readAudiometadata("sepp.mP3", cfg)
+  let am2 = readAudiometadata("sepp.Flac", cfg)
+  let am3 = readAudiometadata("sepp.mPd3", cfg)
   writeAudiomedata(am, "att.mp3")
