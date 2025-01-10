@@ -1,14 +1,19 @@
 import std/[logging,tables,os,strformat,strutils,streams]
 import config
 
+var consoleLog = newConsoleLogger(levelThreshold=lvlInfo, fmtStr="[$levelname] ")
+if len(getHandlers()) == 0:
+  echo "ataglib: added handler"
+  addHandler(consoleLog)
+
 type
   Enc* = enum
-    encIso = 0x00
-    encUtf16 = 0x01
-    encUtf8 = 0x03
+    encIso = 0x00'u8,
+    encUtf16 = 0x01'u8,
+    encUtf8 = 0x03'u8
     
   TagType* = enum
-    ttUndef, ttID3v22, ttID3v23, ttID3v24, ttVorbisComment
+    ttUndef, ttId3v22, ttId3v23, ttId3v24, ttVorbisComment
 
   AudioType* = enum
     atMP3,atFLAC
@@ -33,7 +38,7 @@ type
     audiotype*: AudioType
     tagtype*: TagType
     header*: Header
-    tags*: OrderedTable[string, Tag] # key: ataglib-tagname from 
+    tags*: OrderedTable[string, Tag] # key: ataglib-tagname 
     pics*: seq[Pic]
 
 include id3tag
@@ -42,8 +47,9 @@ include flactag
 proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata
 proc writeAudiomedata*(am: AudioMetadata, fp: string)
 
-proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata =
+proc `$`*(tags: OrderedTable[string, Tag]): string
 
+proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata =
   let strm = newFileStream(fp, fmRead)
   if strm == nil:
     error(fmt("could not open stream for file {fp}"))
@@ -62,16 +68,21 @@ proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata =
   if metadataKind == ['I','D','3']:
     result = readId3Metadata(strm, cfg.id3v23ToAtt)
     if result != nil:
+      info(fmt("read in id3-tag from {fp}"))
       result.audioType = atMP3
+    else:
+      info(fmt("could not read id3Tag for {fp}"))
+      return nil
   elif metadataKind == ['f','L','a']:
     if strm.readChar() != 'C':
-      echo fmt("ERROR: found fLa as prefix - expecting 'C' but got not 'C'")
+      error("found fLa as prefix - expecting 'C' but got not 'C'")
       return nil
     result = readFlacMetadata(strm, cfg.vorbisToAtt)
     if result != nil:
+      info(fmt("read in vorbis-coomment from {fp}"))
       result.audioType = atFLAC
   else:
-    echo fmt("unsupported or no metadata kind (tag-typ3) {metadataKind}")
+    warn(fmt("unsupported or no metadata kind (tag-typ3) {metadataKind}"))
     return nil
 
 proc writeAudiomedata*(am: AudioMetadata, fp: string) =
@@ -89,9 +100,12 @@ proc writeAudiomedata*(am: AudioMetadata, fp: string) =
   else:
     warn(fmt("unsupport file-type: {ext}"))
 
+proc `$`*(tags: OrderedTable[string, Tag]): string =
+  result = ""
+  for tagname, tagval in pairs(tags):
+    result.add(fmt("{tagname}=={tagval.value}\n"))
+    
 when isMainModule:
-  let cfg = loadTagmap("tagmap.toml")
-  let am = readAudiometadata("sepp.mP3", cfg)
-  let am2 = readAudiometadata("sepp.Flac", cfg)
-  let am3 = readAudiometadata("sepp.mPd3", cfg)
-  writeAudiomedata(am, "att.mp3")
+  let cfg = loadConfig("tagmap.toml")
+  let am = readAudiometadata("123.mp3", cfg)
+  
