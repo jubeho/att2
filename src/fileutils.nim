@@ -22,11 +22,11 @@ proc getFilesHandleFiles(fp: string, pattern: seq[string]): seq[string] =
   result = @[]
   let (_, _, ext) = splitFile(fp)
   if ext in pattern:
-    result.add(fp)
+    result.add(absolutePath(fp))
 
 proc getFilesHandleDirs(dir: string, pattern: seq[string]): seq[string] =
   result = @[]
   for path in os.walkDirRec(dir):
     let (_, _, ext) = splitFile(path)
     if ext in pattern:
-      result.add(path)
+      result.add(absolutePath(path))

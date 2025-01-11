@@ -13,6 +13,7 @@ type
     audioMetadatas*: OrderedTable[string, AudioMetadata] # key: filepath
 
 proc newAttData*(args: seq[string], cfgfile: string = "tagmap.toml"): AttData
+proc writeAudiometadatas*(attdata: AttData, files: seq[tuple[src, dest: string]])
 
 proc `$`*(audiometadatas: OrderedTable[string, AudioMetadata]): string
 
@@ -26,6 +27,15 @@ proc newAttData*(args: seq[string], cfgfile: string = "tagmap.toml"): AttData =
     let amd = readAudiometadata(file, result.cfg)
     if amd != nil:
       result.audioMetadatas[file] = amd
+
+proc writeAudiometadatas*(attdata: AttData, files: seq[tuple[src, dest: string]]) =
+  for tupfile in files:
+    if not hasKey(attdata.audioMetadatas, tupfile.src):
+      warn(fmt("file is not in Audiometadata: {tupfile.src}"))
+      continue
+    writeAudiomedata(attdata.audioMetadatas[tupfile.src], tupfile.src, tupfile.dest)
+    notice(fmt("writen Audiometadata to {tupfile.dest}"))
+    
 
 proc `$`*(audiometadatas: OrderedTable[string, AudioMetadata]): string =
   result = ""

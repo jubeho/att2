@@ -45,7 +45,7 @@ include id3tag
 include flactag
    
 proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata
-proc writeAudiomedata*(am: AudioMetadata, fp: string)
+proc writeAudiomedata*(am: AudioMetadata, srcfp, destfp: string)
 
 proc `$`*(tags: OrderedTable[string, Tag]): string
 
@@ -85,18 +85,18 @@ proc readAudiometadata*(fp: string, cfg: AttConfig): AudioMetadata =
     warn(fmt("unsupported or no metadata kind (tag-typ3) {metadataKind}"))
     return nil
 
-proc writeAudiomedata*(am: AudioMetadata, fp: string) =
-  if os.fileExists(fp):
-    warn(fmt("file already exists, overwriting it: {fp}"))
-  var (_, _, ext) = os.splitFile(fp)
+proc writeAudiomedata*(am: AudioMetadata, srcfp, destfp: string) =
+  if os.fileExists(destfp):
+    warn(fmt("file already exists, overwriting it: {destfp}"))
+  var (_, _, ext) = os.splitFile(destfp)
   ext = toLower(ext)
   case ext
   of ".mp3":
     debug "found mp3 file"
-    writeId3Metadata(am, fp)
+    writeId3Metadata(am, srcfp, destfp)
   of ".flac":
     debug "found flac file"
-    writeFlacMetadata(am, fp)
+    writeFlacMetadata(am, destfp)
   else:
     warn(fmt("unsupport file-type: {ext}"))
 

@@ -1,4 +1,4 @@
-import std/[logging,tables,strformat]
+import std/[logging,tables,strformat,os]
 import argparse
 import ./[att]
 
@@ -26,5 +26,12 @@ proc cmdShow(args: seq[string]) =
   var attdata = newAttData(args)
   echo $attdata.audioMetadatas
   echo(fmt("found {len(attdata.files)} and read tags from {len(attdata.audioMetadatas)}"))
-  # for k, v in pairs(attdata.audioMetadatas):
-  #   echo k
+  for file in keys(attdata.audioMetadatas):
+    echo file
+  attdata.audioMetadatas[absolutePath("123.mp3")].tags["YEAR"].value = "2025"
+  echo $attdata.audioMetadatas
+  for v in values(attdata.audioMetadatas):
+    if len(v.pics) > 0:
+      echo "got pics..."
+  writeAudiometadatas(attdata, @[(absolutePath("123.mp3"), "att2-firstWrite.mp3")])
+
